@@ -1,0 +1,22 @@
+# Public stdio MCP image for the accepted harness server.
+# Build-stage network fetches this pinned base image and the lockfile packages.
+# The runtime stage does not listen on a port and does not require credentials.
+FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb AS build
+USER root
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts --no-audit --no-fund
+COPY tsconfig.json ./
+COPY src ./src
+RUN npx tsc
+
+FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb AS runtime
+USER root
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund \
+  && node --input-type=module -e "import {readFileSync} from 'node:fs'; const sdk=JSON.parse(readFileSync('node_modules/@modelcontextprotocol/sdk/package.json','utf8')); const zod=JSON.parse(readFileSync('node_modules/zod/package.json','utf8')); if (sdk.version!=='1.32.2' || zod.version!=='4.6.7') { console.error(sdk.version, zod.version); process.exit(1); }" \
+  && npm cache clean --force
+COPY --from=build --chown=node:node /app/dist ./dist
+USER node
+ENTRYPOINT ["node", "dist/mcp-server.js"]

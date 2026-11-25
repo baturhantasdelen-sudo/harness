@@ -25,11 +25,19 @@
     "start": "node dist/cli.js run",
     "harness": "tsx src/cli.ts run",
     "harness:http": "tsx src/cli.ts run --adapter http",
-    "test": "npm run build && node --test tests/*.test.js"
+    "test": "npm run build && node --test tests/*.test.js",
+    "mcp:stdio": "node dist/mcp-server.js"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  },
+  "overrides": {
+    "zod": "4.6.7"
   }
 }
